@@ -1,6 +1,29 @@
 import re
+from typing import List, Tuple
 
 from .base import Phase
+
+# Applied in order — compound operators before single chars to avoid
+# partial matches (e.g. handle => before =, <= before <).
+_OP_SUBS: List[Tuple[re.Pattern, str]] = [
+    # spaces inside brackets
+    (re.compile(r'\( +'),      '('),
+    (re.compile(r' +\)'),      ')'),
+    (re.compile(r'\[ +'),      '['),
+    (re.compile(r' +\]'),      ']'),
+    # space before comma / semicolon
+    (re.compile(r' +([,;])'),  r'\1'),
+    # compound operators
+    (re.compile(r' *(=>|==|!=|<=|>=|\+=|-=|\*=|/=|&&|\|\||\?\?|->) *'), r'\1'),
+    # single operators flanked by spaces on both sides
+    (re.compile(r' ([=+\-*/%<>]) '), r'\1'),
+]
+
+
+def _strip_op_spaces(body: str) -> str:
+    for pattern, repl in _OP_SUBS:
+        body = pattern.sub(repl, body)
+    return body
 
 
 def _detect_indent_unit(lines: list) -> int:
@@ -64,6 +87,7 @@ class WhitespaceNormalizer(Phase):
             leading = len(line) - len(line.lstrip(" "))
             indent = line[:leading]
             body = re.sub(r" {2,}", " ", line[leading:])
+            body = _strip_op_spaces(body)
             lines.append(indent + body)
 
         # Remove all blank lines — they carry no semantic content for the LLM

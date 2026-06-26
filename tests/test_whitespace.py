@@ -85,6 +85,37 @@ def test_blank_lines_between_methods_removed(normalizer):
     assert result == "void foo() {}\nvoid bar() {}"
 
 
+def test_spaces_inside_parens_removed(normalizer):
+    assert normalizer.apply("foo( a, b )") == "foo(a, b)"
+
+
+def test_spaces_inside_brackets_removed(normalizer):
+    assert normalizer.apply("list[ 0 ]") == "list[0]"
+
+
+def test_space_before_comma_removed(normalizer):
+    assert normalizer.apply("foo(a , b , c)") == "foo(a, b, c)"
+
+
+def test_compound_operators_stripped(normalizer):
+    assert normalizer.apply("x == y") == "x==y"
+    assert normalizer.apply("x != y") == "x!=y"
+    assert normalizer.apply("x => y") == "x=>y"
+    assert normalizer.apply("x += 1") == "x+=1"
+    assert normalizer.apply("x && y") == "x&&y"
+
+
+def test_single_operators_stripped(normalizer):
+    assert normalizer.apply("x = y") == "x=y"
+    assert normalizer.apply("x + y") == "x+y"
+    assert normalizer.apply("x - y") == "x-y"
+
+
+def test_unary_minus_preserved(normalizer):
+    # unary minus has no space on the left — must not be touched
+    assert normalizer.apply("return -1;") == "return -1;"
+
+
 def test_empty_string(normalizer):
     assert normalizer.apply("") == ""
 
