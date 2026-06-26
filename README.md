@@ -8,8 +8,9 @@ llmpress reduces the token cost of sending source code to an LLM by detecting
 repeated patterns, replacing them with short aliases, and transparently
 restoring the originals in the model's response.
 
-The compression is **lossless**: the user never sees the compressed
-representation.
+The alias compression is **lossless** — identifiers are always fully restored.
+Whitespace is minified (indentation, blank lines, operator spacing) for maximum
+token savings.
 
 ```
 Original prompt (1 000 tokens)
@@ -17,11 +18,13 @@ Original prompt (1 000 tokens)
          ▼
     llmpress compress
          │
-         ├─ parse + normalise whitespace
+         ├─ compress indentation to 1 space per level
+         ├─ remove blank lines
          ├─ detect repeated token sequences
          ├─ score each candidate for token savings
          ├─ build optimal alias dictionary
-         └─ rewrite source using T0, T1, T2 …
+         ├─ rewrite source using T0, T1, T2 …
+         └─ strip spaces around operators + punctuation
          │
          ▼
 Compressed prompt (600 tokens)  ←── sent to the LLM
@@ -240,10 +243,13 @@ comp = Compressor(tokenizer=TiktokenTokenizer("gpt-4o"))
 
 ## How it works
 
-### 1. Whitespace normalisation
+### 1. Whitespace minification
 
-Collapse redundant whitespace, normalise line endings, strip trailing spaces.
-Code structure is preserved exactly.
+Applied automatically before phrase detection:
+
+- **Indentation compressed** — detects the source's indent unit (2 or 4 spaces, tabs) and reduces to 1 space per level
+- **Blank lines removed** — all blank lines stripped; they carry no semantic content for the LLM
+- **Operator spaces stripped** — applied *after* aliasing so phrase detection still runs on spaced text; removes spaces inside `()` and `[]`, before `,` and `;`, and around operators (`==`, `=>`, `+=`, `&&`, etc.)
 
 ### 2. Phrase detection (two passes)
 
@@ -251,7 +257,9 @@ Code structure is preserved exactly.
 more than once. CamelCase names like `PortfolioActivityBloc` are especially
 profitable: the BPE tokeniser splits them into subwords
 (`Portfolio` + `Activity` + `Bloc` = 3 tokens), so replacing them with a
-short alias saves tokens per occurrence.
+short alias saves tokens per occurrence. Structural keywords (`extends`,
+`implements`, `final`, `class`, …) are excluded — aliasing them produces
+syntactically broken-looking code.
 
 **N-gram pass** — find repeated whitespace-separated sequences of 2–6 tokens.
 Patterns like `emit(PortfolioActivityLoading())` or
@@ -272,7 +280,13 @@ Candidates are sorted by savings (descending) and assigned sequential aliases
 phrases: after each phrase is committed, subsequent candidates are only accepted
 if they still appear at the required frequency in the already-compressed source.
 
-### 5. Prompt construction
+### 5. Operator space stripping
+
+After aliases are applied, spaces around operators and inside brackets are
+stripped from the remaining unaliased code. This step runs *after* aliasing
+so phrase detection can use spaces as n-gram boundaries.
+
+### 6. Prompt construction
 
 ```
 [LLMPRESS:DICT]
@@ -281,9 +295,10 @@ T1=Either<PortfolioFailure, List<PortfolioItem>>
 [END:DICT]
 
 [LLMPRESS:RULES]
-- Aliases T0, T1, ... represent EXISTING symbols in the source only.
+- The dictionary above maps short aliases (T0, T1, …) to their EXACT original text.
+- Before analysing the source, mentally substitute every alias with its original.
+- Do NOT flag aliases as poor variable names; they are transport-only tokens.
 - DO NOT invent new aliases or use Tn notation for any new code you write.
-- New identifiers must follow the naming conventions visible in the source.
 [END:RULES]
 
 [LLMPRESS:TASK]
@@ -292,12 +307,12 @@ Review this code for issues.
 
 [LLMPRESS:SOURCE]
 class T0 extends Bloc<PortfolioEvent, PortfolioState> {
-  ...
+ ...
 }
 [END:SOURCE]
 ```
 
-### 6. Response expansion
+### 7. Response expansion
 
 The postprocessor replaces every alias with its original text using
 word-boundary-aware regex, processing longer aliases first to avoid
@@ -319,18 +334,21 @@ word-boundary-aware regex, processing longer aliases first to avoid
 ```
 src/llmpress/
 ├── __init__.py              # Public API: Compressor, Decompressor
-├── cli.py                   # Click CLI: compress / expand / llmpress
+├── cli.py                   # Click CLI: compress / expand / run
 ├── core/
 │   ├── models.py            # PhraseCandidate, Dictionary, CompressionStats, …
 │   ├── compressor.py        # Pipeline orchestrator
 │   └── decompressor.py      # Alias expansion
 ├── phases/
 │   ├── base.py              # Phase ABC (extensible pipeline step)
-│   ├── whitespace.py        # WhitespaceNormalizer
+│   ├── whitespace.py        # WhitespaceNormalizer (minification + operator stripping)
 │   ├── comment_stripper.py  # Language-aware comment removal
 │   ├── phrase_detector.py   # Two-pass detection + savings scoring
 │   ├── dict_builder.py      # Greedy alias assignment with overlap elimination
 │   └── rewriter.py          # Rewriter + Expander
+├── providers/
+│   ├── anthropic.py         # Anthropic Messages API (claude-sonnet-4-6 default)
+│   └── openai.py            # OpenAI Chat Completions API (gpt-4o default)
 └── tokenizers/
     ├── base.py              # Tokenizer ABC (pluggable)
     ├── approximate.py       # Heuristic CamelCase-aware counter (no deps)
@@ -369,6 +387,7 @@ python3 -m pytest tests/ --cov=src/llmpress --cov-report=term-missing
 - Semantic phrase detection via embeddings
 - VS Code extension
 - Language plugins: Kotlin, Swift, Go, Ruby
+- Streaming LLM responses
 
 ---
 
