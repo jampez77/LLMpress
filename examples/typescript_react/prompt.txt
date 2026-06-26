@@ -1,0 +1,1 @@
+Review this React component for performance issues, unnecessary re-renders, and best practices. Suggest improvements to the hooks usage and state management.
