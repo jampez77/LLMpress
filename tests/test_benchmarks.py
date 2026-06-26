@@ -29,12 +29,15 @@ def check_fixture(path: str, prompt: str = "Review this code.", min_saving: int 
         f"Expected >= {min_saving} token savings for {path}, "
         f"got {result.stats.net_token_savings}"
     )
-    # Roundtrip
+    # Roundtrip — operator spaces are stripped after aliasing, so apply the
+    # same pass after expansion and compare against consistently-normalised source.
     dec = Decompressor()
-    restored = dec.expand(result.compressed_source, result.dictionary)
+    expanded = dec.expand(result.compressed_source, result.dictionary)
     comp = Compressor(tokenizer=ApproximateTokenizer())
-    normalised = comp._whitespace.apply(load_fixture(path))
-    assert restored == normalised, f"Roundtrip failed for {path}"
+    wn = comp._whitespace
+    restored = wn.strip_operators(expanded)
+    expected = wn.strip_operators(wn.apply(load_fixture(path)))
+    assert restored == expected, f"Roundtrip failed for {path}"
     return result
 
 

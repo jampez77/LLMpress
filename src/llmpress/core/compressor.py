@@ -106,6 +106,9 @@ class Compressor:
 
         # --- Phase 5: rewrite source ---
         compressed_source = self._rewriter.rewrite(normalised, dictionary)
+        # Strip operator spaces AFTER aliasing so phrase detection ran on
+        # spaced text (spaces create n-gram boundaries the scanner relies on).
+        compressed_source = self._whitespace.strip_operators(compressed_source)
 
         # --- Phase 6: build final prompt ---
         if dictionary.is_empty():

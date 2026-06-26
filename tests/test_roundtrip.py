@@ -18,17 +18,19 @@ def roundtrip(source: str, prompt: str = "Review.") -> str:
     comp = Compressor(tokenizer=ApproximateTokenizer())
     result = comp.compress(source, prompt)
     dec = Decompressor()
-    return dec.expand(result.compressed_source, result.dictionary)
+    expanded = dec.expand(result.compressed_source, result.dictionary)
+    # Operator spaces are stripped after aliasing; apply the same pass after
+    # expansion so both sides of the comparison are consistently normalised.
+    return comp._whitespace.strip_operators(expanded)
 
 
 def assert_roundtrip(source: str, prompt: str = "Review."):
     restored = roundtrip(source, prompt)
-    # Normalise for comparison (compressor may have normalised whitespace)
     comp = Compressor(tokenizer=ApproximateTokenizer())
-    normalised = comp._whitespace.apply(source)
-    assert restored == normalised, (
+    expected = comp._whitespace.strip_operators(comp._whitespace.apply(source))
+    assert restored == expected, (
         f"Roundtrip failed.\n"
-        f"Expected:\n{normalised[:300]}\n"
+        f"Expected:\n{expected[:300]}\n"
         f"Got:\n{restored[:300]}"
     )
 
