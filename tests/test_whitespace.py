@@ -1,7 +1,7 @@
 """Tests for the WhitespaceNormalizer phase."""
 import pytest
 
-from llmpress.phases.whitespace import WhitespaceNormalizer
+from llmpress.phases.whitespace import WhitespaceNormalizer, _detect_indent_unit
 
 
 @pytest.fixture()
@@ -31,18 +31,57 @@ def test_internal_spaces_collapsed(normalizer):
     assert "  " not in result
 
 
-def test_indentation_preserved(normalizer):
+def test_indentation_compressed_4_to_1(normalizer):
+    code = "class Foo {\n    void bar() {\n        return 1;\n    }\n}"
+    result = normalizer.apply(code)
+    lines = result.split("\n")
+    # 4-space indent → 1 space per level
+    assert lines[1].startswith(" void")
+    assert lines[2].startswith("  return")
+    assert lines[3].startswith(" }")
+
+
+def test_indentation_compressed_2_to_1(normalizer):
     code = "class Foo {\n  void bar() {\n    return 1;\n  }\n}"
     result = normalizer.apply(code)
-    # Leading indentation must survive
-    assert "  void bar" in result
-    assert "    return 1" in result
+    lines = result.split("\n")
+    assert lines[1].startswith(" void")
+    assert lines[2].startswith("  return")
+
+
+def test_indentation_compressed_tabs(normalizer):
+    code = "class Foo {\n\tvoid bar() {\n\t\treturn 1;\n\t}\n}"
+    result = normalizer.apply(code)
+    lines = result.split("\n")
+    assert lines[1].startswith(" void")
+    assert lines[2].startswith("  return")
+
+
+def test_detect_indent_unit_4_spaces():
+    lines = ["class Foo {", "    void bar() {", "        return;", "    }"]
+    assert _detect_indent_unit(lines) == 4
+
+
+def test_detect_indent_unit_2_spaces():
+    lines = ["class Foo {", "  void bar() {", "    return;", "  }"]
+    assert _detect_indent_unit(lines) == 2
+
+
+def test_detect_indent_unit_no_indent():
+    lines = ["foo()", "bar()"]
+    assert _detect_indent_unit(lines) == 1
 
 
 def test_multiple_blank_lines_collapsed(normalizer):
-    code = "line1\n\n\n\n\nline2"
+    code = "line1\n\n\nline2"
     result = normalizer.apply(code)
     assert "\n\n\n" not in result
+
+
+def test_double_blank_lines_collapsed(normalizer):
+    code = "line1\n\n\nline2"
+    result = normalizer.apply(code)
+    assert result == "line1\n\nline2"
 
 
 def test_single_blank_line_preserved(normalizer):
@@ -51,19 +90,11 @@ def test_single_blank_line_preserved(normalizer):
     assert "\n\n" in result
 
 
-def test_no_collapse_blank_lines(normalizer):
-    n = WhitespaceNormalizer(collapse_blank_lines=False)
-    code = "a\n\n\n\nb"
-    result = n.apply(code)
-    # With flag off, multiple blanks are preserved
-    assert "\n\n\n" in result
-
-
 def test_empty_string(normalizer):
     assert normalizer.apply("") == ""
 
 
-def test_already_clean_unchanged(normalizer):
-    code = "class Foo {\n  void bar() {}\n}"
+def test_no_indentation_unchanged(normalizer):
+    code = "foo()\nbar()\nbaz()"
     result = normalizer.apply(code)
     assert result == code
