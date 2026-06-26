@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 130" width="900" height="130">
+  <rect width="900" height="130" rx="8" fill="#0e1117"/>
+
+  <!-- compression glyph: wide bars → narrow bars -->
+  <g transform="translate(52, 38)">
+    <!-- input bars -->
+    <rect x="0"  y="0"  width="28" height="8"  rx="2" fill="#5eead4" opacity="0.9"/>
+    <rect x="0"  y="14" width="22" height="8"  rx="2" fill="#5eead4" opacity="0.6"/>
+    <rect x="0"  y="28" width="26" height="8"  rx="2" fill="#5eead4" opacity="0.75"/>
+    <rect x="0"  y="42" width="18" height="8"  rx="2" fill="#5eead4" opacity="0.5"/>
+
+    <!-- arrow -->
+    <line x1="38" y1="25" x2="54" y2="25" stroke="#5eead4" stroke-width="1.5" opacity="0.4"/>
+    <polygon points="54,21 62,25 54,29" fill="#5eead4" opacity="0.4"/>
+
+    <!-- output bars (compressed) -->
+    <rect x="70" y="4"  width="14" height="8"  rx="2" fill="#5eead4" opacity="0.9"/>
+    <rect x="70" y="18" width="10" height="8"  rx="2" fill="#5eead4" opacity="0.6"/>
+    <rect x="70" y="32" width="12" height="8"  rx="2" fill="#5eead4" opacity="0.75"/>
+    <rect x="70" y="46" width="8"  height="8"  rx="2" fill="#5eead4" opacity="0.5"/>
+  </g>
+
+  <!-- wordmark -->
+  <text
+    x="192" y="74"
+    font-family="'SF Mono', 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace"
+    font-size="52"
+    font-weight="300"
+    letter-spacing="-1"
+    fill="#8b949e"
+  >llm</text>
+  <text
+    x="318" y="74"
+    font-family="'SF Mono', 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace"
+    font-size="52"
+    font-weight="600"
+    letter-spacing="-1"
+    fill="#5eead4"
+  >press</text>
+
+  <!-- tagline -->
+  <text
+    x="192" y="100"
+    font-family="'SF Mono', 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace"
+    font-size="13"
+    font-weight="400"
+    letter-spacing="0.5"
+    fill="#484f58"
+  >LLM-native prompt compression for source code</text>
+</svg>

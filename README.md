@@ -1,6 +1,8 @@
-# llmpress
+<div align="center">
+  <img src="assets/header.svg" alt="llmpress" width="900"/>
+</div>
 
-**LLM-native prompt compression for source code.**
+<br>
 
 llmpress reduces the token cost of sending source code to an LLM by detecting
 repeated patterns, replacing them with short aliases, and transparently
