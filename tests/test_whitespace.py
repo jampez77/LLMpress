@@ -72,22 +72,17 @@ def test_detect_indent_unit_no_indent():
     assert _detect_indent_unit(lines) == 1
 
 
-def test_multiple_blank_lines_collapsed(normalizer):
-    code = "line1\n\n\nline2"
+def test_blank_lines_removed(normalizer):
+    code = "line1\n\nline2\n\n\nline3"
     result = normalizer.apply(code)
-    assert "\n\n\n" not in result
+    assert "\n\n" not in result
+    assert result == "line1\nline2\nline3"
 
 
-def test_double_blank_lines_collapsed(normalizer):
-    code = "line1\n\n\nline2"
+def test_blank_lines_between_methods_removed(normalizer):
+    code = "void foo() {}\n\nvoid bar() {}"
     result = normalizer.apply(code)
-    assert result == "line1\n\nline2"
-
-
-def test_single_blank_line_preserved(normalizer):
-    code = "line1\n\nline2"
-    result = normalizer.apply(code)
-    assert "\n\n" in result
+    assert result == "void foo() {}\nvoid bar() {}"
 
 
 def test_empty_string(normalizer):

@@ -66,6 +66,6 @@ class WhitespaceNormalizer(Phase):
             body = re.sub(r" {2,}", " ", line[leading:])
             lines.append(indent + body)
 
-        # Collapse 2+ consecutive blank lines to exactly one
-        result = re.sub(r"\n{3,}", "\n\n", "\n".join(lines))
+        # Remove all blank lines — they carry no semantic content for the LLM
+        result = "\n".join(line for line in lines if line)
         return result.strip()
