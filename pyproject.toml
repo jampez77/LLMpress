@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llmpress"
+version = "0.1.0"
+description = "LLM-native prompt compression for source code"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "click>=8.1",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+tiktoken = ["tiktoken>=0.5"]
+anthropic = ["anthropic>=0.25"]
+openai = ["openai>=1.0"]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "tiktoken>=0.5",
+    "anthropic>=0.25",
+    "openai>=1.0",
+]
+
+[project.scripts]
+llmpress = "llmpress.cli:main"
+llmpress-compress = "llmpress.cli:compress"
+llmpress-expand = "llmpress.cli:expand"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/llmpress"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["src/llmpress"]

@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.env
+*.json.bak
+compressed_prompt.txt
+dictionary.json
+stats.json
+response.txt
+.pytest_cache/
+.coverage
+htmlcov/
