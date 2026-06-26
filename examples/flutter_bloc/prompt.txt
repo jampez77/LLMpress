@@ -1,1 +1,0 @@
-Review this Flutter BLoC implementation for best practices, potential bugs, and performance issues. Pay particular attention to state management patterns and error handling.
