@@ -96,7 +96,44 @@ Python API.
 
 ## CLI usage
 
-### Compress
+### Full pipeline: compress → LLM → expand → print
+
+```bash
+# Anthropic (default)
+export ANTHROPIC_API_KEY="sk-ant-..."
+llmpress run source.dart "Review this code."
+
+# OpenAI
+export OPENAI_API_KEY="sk-..."
+llmpress run source.dart "Review this code." --provider openai
+
+# Directory mode — auto-finds source file + prompt.txt
+llmpress run examples/flutter_bloc/
+llmpress run examples/flutter_bloc/ --provider openai
+
+# Save intermediate files (compressed prompt, dictionary, raw response)
+llmpress run source.dart "Review." --output-dir ./out
+
+# Use a specific model
+llmpress run source.dart "Review." --provider openai --model gpt-4o-mini
+llmpress run source.dart "Review." --provider anthropic --model claude-opus-4-8
+```
+
+### API keys
+
+| Provider | Environment variable | Get a key |
+|---|---|---|
+| Anthropic | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) → API Keys |
+| OpenAI | `OPENAI_API_KEY` | [platform.openai.com](https://platform.openai.com) → API Keys |
+
+Add to `~/.zshrc` (or `~/.bashrc`) to make permanent:
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+export OPENAI_API_KEY="sk-..."
+```
+
+### Compress only (no LLM call)
 
 ```bash
 llmpress compress source.dart "Review this code."
@@ -113,7 +150,7 @@ Outputs three files (next to the source, or in `--output-dir`):
 | `dictionary.json` | Needed to expand the response |
 | `stats.json` | Compression statistics |
 
-### Expand
+### Expand only (after manual LLM call)
 
 ```bash
 llmpress expand dictionary.json llm_response.txt
@@ -123,6 +160,22 @@ llmpress expand dictionary.json llm_response.txt --output expanded.txt
 ### All options
 
 ```
+llmpress run --help
+
+  SOURCE_FILE             Path to the source file, or a directory containing
+                          a source file and prompt.txt
+  PROMPT                  Prompt text, or path to a .txt file
+
+  --provider TEXT         anthropic | openai  [default: anthropic]
+  --model TEXT            Model name (default: claude-sonnet-4-6 / gpt-4o)
+  --max-tokens INT        Max tokens in LLM response  [default: 4096]
+  --output-dir PATH       Save compressed_prompt.txt, dictionary.json,
+                          stats.json, response.txt here
+  --tokenizer TEXT        approximate | tiktoken | tiktoken:<model>  [default: auto]
+  --strip-comments        Remove // and /* */ comments before compressing
+  --strip-docs            Remove doc comments (/** */ or ///)
+  --quiet / -q            Suppress compression statistics
+
 llmpress compress --help
 
   SOURCE_FILE           Path to the source file to compress
