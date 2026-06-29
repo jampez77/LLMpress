@@ -82,7 +82,7 @@ You can always invoke llmpress via the module runner instead:
 ```bash
 python3 -m llmpress.cli --help
 python3 -m llmpress.cli compress source.dart "Review this code."
-python3 -m llmpress.cli expand dictionary.json response.txt
+python3 -m llmpress.cli expand examples/flutter_bloc/
 ```
 
 ### Optional: exact token counting
@@ -157,10 +157,15 @@ Outputs three files (next to the source, or in `--output-dir`):
 
 ### Expand only (after manual LLM call)
 
+After running `compress`, send `compressed_prompt.txt` to your LLM manually,
+save the response as `response.txt` in the same directory, then:
+
 ```bash
-llmpress expand dictionary.json llm_response.txt
-llmpress expand dictionary.json llm_response.txt --output expanded.txt
+llmpress expand examples/flutter_bloc/
 ```
+
+Reads `dictionary.json` and `compressed_prompt.txt` from the directory.
+Produces `expanded_prompt.txt` — the full human-readable prompt sent to the LLM.
 
 ### All options
 

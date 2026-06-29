@@ -4,7 +4,7 @@ llmpress CLI
 
 Entry points:
   compress  <source_file> <prompt_or_file> [options]
-  expand    <dictionary_json> <response_file>  [options]
+  expand    <directory>  [options]
   llmpress  compress|expand  …  (same as above via sub-commands)
 """
 from __future__ import annotations
@@ -226,34 +226,35 @@ def compress(
 # ---------------------------------------------------------------------------
 
 @click.command("expand")
-@click.argument("dictionary_file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
-@click.argument("response_file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
-@click.option("--output", "-o", type=click.Path(dir_okay=False, path_type=Path),
-              default=None, help="Output file (default: stdout).")
+@click.argument("directory", type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--quiet", "-q", is_flag=True, default=False)
 def expand(
-    dictionary_file: Path,
-    response_file: Path,
-    output: Path | None,
+    directory: Path,
     quiet: bool,
 ) -> None:
     """
-    Expand aliases in RESPONSE_FILE using DICTIONARY_FILE.
+    Expand aliases in DIRECTORY using its dictionary.json.
 
-    Writes expanded text to stdout or --output path.
+    Expects: dictionary.json, compressed_prompt.txt.
+    Produces: expanded_prompt.txt.
     """
+    dictionary_file = directory / "dictionary.json"
+    prompt_file = directory / "compressed_prompt.txt"
+
+    if not dictionary_file.exists():
+        raise click.ClickException(f"dictionary.json not found in {directory}")
+    if not prompt_file.exists():
+        raise click.ClickException(f"compressed_prompt.txt not found in {directory}")
+
     if not quiet:
-        console.print(f"[bold]llmpress expand[/bold]  {response_file.name}")
+        console.print(f"[bold]llmpress expand[/bold]  {directory}")
 
     decomp = Decompressor()
-    expanded = decomp.expand_file(response_file, dictionary_file)
 
-    if output:
-        output.write_text(expanded, encoding="utf-8")
-        if not quiet:
-            console.print(f"[green]✓[/green] Expanded response → {output}")
-    else:
-        click.echo(expanded)
+    out_prompt = directory / "expanded_prompt.txt"
+    out_prompt.write_text(decomp.expand_file(prompt_file, dictionary_file), encoding="utf-8")
+    if not quiet:
+        console.print(f"[green]✓[/green] {out_prompt}")
 
 
 # ---------------------------------------------------------------------------
@@ -314,7 +315,6 @@ def run(
     language = _detect_language(source_file)
 
     tok = get_tokenizer(tokenizer)
-    _dbg(f"tokenizer={tok.name()}")
     comp = Compressor(
         tokenizer=tok,
         strip_comments=strip_comments,
